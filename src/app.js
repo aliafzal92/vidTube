@@ -24,11 +24,17 @@ app.use(
 );
 
 app.use(express.static("public"));
-app.use(cookieParser);
+app.use(cookieParser());
 
 // app.use(()=>{
 //     console.log("from middle ware");
 
 // })
+
+
+// importing routes
+import userRouter from "./routes/user.routes.js"
+app.use("/api/v1/users" , userRouter )
+
 
 export { app };

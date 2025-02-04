@@ -16,8 +16,5 @@ connectDB()
     process.exit(1); // Exit process if DB connection fails
   });
 
-app.on("error", (err) => {
-  console.error("🔥 Server Error:", err);
-  process.exit(1);
-});
+
 
