@@ -25,22 +25,39 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new ApiError(409, "User with same email or username already existed");
   }
 
+  // console.log("req==>files" , req.files);
+  
+
   const avatarLocalPath = req.files?.avatar[0]?.path;
-  const coverimageLocalPath = req.files?.coverimage[0]?.path;
+  // const coverimageLocalPath = req.files?.coverimage[0]?.path;
+  
+  let coverimageLocalPath;
+  if(req.files && Array.isArray(req.files.coverimage) && req.files.coverimage.length>0){
+    coverimageLocalPath = req.files.coverimage[0].path
+
+  }
+  
+  console.log(coverimageLocalPath);
+
+  
 
   if (!avatarLocalPath) {
     throw new ApiError(400, "Avatar field is required");
   }
 
   const avatar = await uploadOnCloudinary(avatarLocalPath);
+  // console.log(avatar);
+  
   const coverimage = await uploadOnCloudinary(coverimageLocalPath);
   if (!avatar) {
     throw new ApiError(400, "Avatar field is required");
   }
+  // console.log(coverimage);
+  
 
   const user = await User.create({
-    fullname,
-    avatar: avatar.url,
+    fullname, 
+    avatar: avatar.url, 
     coverimage: coverimage?.url || "",
     email,
     password,
@@ -55,9 +72,12 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new ApiError(500, "Something went wrong while registring a user");
   }
 
-  return res.status(201).json(
-    new ApiResponse(200,createdUser, "User registered successfully")
-  )
+    res.status(201).json(createdUser)
+
+
+  // return res.status(201).json(
+  //   new ApiResponse(200,createdUser, "User registered successfully")
+  // )
 });
 
 export { registerUser };

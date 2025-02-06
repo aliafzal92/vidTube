@@ -4,5 +4,8 @@ const std = {
   
 }
 
-console.log(std.uni?.nam);
-console.log(std.uni?.nam);
+// console.log(std.uni?.nam);
+// console.log(std.uni?.nam);
+
+
+console.log(undefined || "ali");
