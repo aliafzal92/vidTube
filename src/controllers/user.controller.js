@@ -3,6 +3,7 @@ import { User } from "../models/user.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
+import jwt from "jsonwebtoken";
 
 const registerUser = asyncHandler(async (req, res) => {
   // getting user details from frontend
@@ -80,7 +81,7 @@ const registerUser = asyncHandler(async (req, res) => {
 
 const generateAccessAndRefreshToken = async (userId) => {
   try {
-    const user = User.findById(userId);
+    const user = await User.findById(userId);
     const refreshToken = user.generateRefreshTokens();
     const accessToken = user.generateAccessTokens();
 
@@ -95,11 +96,11 @@ const generateAccessAndRefreshToken = async (userId) => {
 const loginUser = asyncHandler(async (req, res) => {
   const { username, email, password } = req.body;
 
-  if (!username || !email) {
+  if (!(username || email)) {
     throw new ApiError(400, "username or password is required");
   }
 
-  const user = await User.find({
+  const user = await User.findOne({
     $or: [{ email }, { password }],
   });
 
@@ -159,4 +160,43 @@ const logoutUser = asyncHandler(async (req, res) => {
     });
 });
 
-export { registerUser, loginUser, logoutUser };
+const refreshAccessToken = asyncHandler(async (req, res) => {
+  const incomingRefreshToken =
+    req.cookies.refreshToken || req.body.refreshToken;
+  if (!incomingRefreshToken) {
+    throw new ApiError(401, "unauthorized request");
+  }
+
+  const decodedToken = jwt.verify(
+    incomingRefreshToken,
+    process.env.REFRESH_TOKEN_SECRET
+  );
+  const user = await User.findById(decodedToken._id);
+  if (!user) {
+    throw new ApiError(401, "Invalid refresh token");
+  }
+
+  if (incomingRefreshToken !== user?.refreshToken) {
+    throw new ApiError(401, "invalid refresh token");
+  }
+
+  const options = {
+    httpOnly: true,
+    secure: true,
+  };
+
+  const { newAccessToken, newRefreshToken } = await generateAccessAndRefreshToken(
+    user._id
+  );
+
+  return res
+    .status(200)
+    .cookie("accessToken", newAccessToken , options)
+    .cookie("refreshToken", newRefreshToken , options)
+    .json({
+      accessToken : newAccessToken,
+      refreshToken : newRefreshToken
+    });
+});
+
+export { registerUser, loginUser, logoutUser  , refreshAccessToken};
